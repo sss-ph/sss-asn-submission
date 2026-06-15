@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Speedship Solution ASN Submission System</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -135,6 +137,7 @@
   .line-no { color: var(--gray-hint); font-size: 12px; text-align: center; width: 32px; }
   td input, td select { padding: 6px 7px; font-size: 13px; }
   td input.invalid { border-color: var(--danger); background: #fff8f8; }
+  input.field-error, select.field-error { border-color: var(--danger) !important; background: #fff8f8 !important; box-shadow: 0 0 0 3px rgba(192,57,43,.1) !important; }
 
   .add-line-bar { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
 
@@ -278,23 +281,23 @@
           <input type="text" id="fPO">
         </div>
         <div class="field">
-          <label>วัน-เวลาที่คาดว่าจะมาถึง <span style="color:var(--danger)">*</span></label>
+          <label>วัน-เวลาที่คาดว่าจะมาถึง</label>
           <input type="datetime-local" id="fArrival">
         </div>
         <div class="field">
-          <label>ชื่อบริษัทผู้ส่ง <span style="color:var(--danger)">*</span></label>
+          <label>ชื่อบริษัทผู้ส่ง</label>
           <input type="text" id="fSenderCompany" placeholder="ชื่อบริษัท">
         </div>
         <div class="field col-span-2">
-          <label>ที่อยู่บริษัทผู้ส่ง <span style="color:var(--danger)">*</span></label>
+          <label>ที่อยู่บริษัทผู้ส่ง</label>
           <input type="text" id="fSenderAddress" placeholder="ที่อยู่เต็ม">
         </div>
         <div class="field">
-          <label>ชื่อผู้ส่ง <span style="color:var(--danger)">*</span></label>
+          <label>ชื่อผู้ส่ง</label>
           <input type="text" id="fSenderName" placeholder="ชื่อ-นามสกุล">
         </div>
         <div class="field">
-          <label>เบอร์โทรศัพท์ผู้ส่ง <span style="color:var(--danger)">*</span></label>
+          <label>เบอร์โทรศัพท์ผู้ส่ง</label>
           <input type="text" id="fSenderPhone" placeholder="เช่น 081-234-5678">
         </div>
         <div class="field col-span-2">
@@ -324,7 +327,7 @@
           <span id="uploadResult" class="upload-result"></span>
         </div>
         <div style="margin-top:8px;font-size:11px;color:var(--gray-hint);line-height:1.6">
-          <strong>ลำดับ Column:</strong> เลข SKU · ชื่อสินค้า · เลขล็อต · วันหมดอายุ (YYYY-MM-DD) · ขนาดลัง · จำนวน(ลัง) · จำนวน(ชิ้น) · หมายเหตุ
+          <strong>ลำดับ Column:</strong> เลข SKU * · ชื่อสินค้า * · เลขล็อต * · วันหมดอายุ * (DD/MM/YYYY) · กว้าง * · ยาว * · สูง * · จำนวน(ลัง) * · จำนวน(ชิ้น) * · หมายเหตุ
         </div>
       </div>
 
@@ -336,10 +339,12 @@
               <th style="min-width:130px">เลข SKU <span style="font-weight:400;opacity:.75">*</span></th>
               <th style="min-width:150px">ชื่อสินค้า <span style="font-weight:400;opacity:.75">*</span></th>
               <th style="min-width:100px">เลขล็อต <span style="font-weight:400;opacity:.75">*</span></th>
-              <th style="min-width:118px">วันหมดอายุ <span style="font-weight:400;opacity:.75">*</span></th>
-              <th style="min-width:108px">ขนาดลัง(กxยxส)</th>
-              <th style="min-width:80px">จำนวน(ลัง)</th>
-              <th style="min-width:80px">จำนวน(ชิ้น) <span style="font-weight:400;opacity:.75">*</span></th>
+              <th style="min-width:118px">วันหมดอายุ <span style="font-weight:400;opacity:.75">*</span><br><span style="font-weight:400;font-size:11px;opacity:.6">DD/MM/YYYY</span></th>
+              <th style="min-width:90px">ความกว้างลัง<br><span style="font-weight:400;opacity:.8">(cm)</span></th>
+              <th style="min-width:90px">ความยาวลัง<br><span style="font-weight:400;opacity:.8">(cm)</span></th>
+              <th style="min-width:90px">ความสูงลัง<br><span style="font-weight:400;opacity:.8">(cm)</span></th>
+              <th style="min-width:80px">จำนวน <span style="font-weight:400;opacity:.75">*</span><br><span style="font-weight:400;opacity:.8">(ลัง)</span></th>
+              <th style="min-width:80px">จำนวน <span style="font-weight:400;opacity:.75">*</span><br><span style="font-weight:400;opacity:.8">(ชิ้น)</span></th>
               <th style="min-width:96px">หมายเหตุ</th>
               <th style="width:36px"></th>
             </tr>
@@ -557,18 +562,21 @@ function addLine() {
     <td><input type="text" id="name-${idx}" placeholder="ชื่อสินค้า"></td>
     <td><input type="text" id="lot-${idx}" placeholder="เลขล็อต"></td>
     <td style="min-width:130px">
-      <input type="date" id="expiry-${idx}" style="width:100%;display:block">
+      <input type="text" id="expiry-${idx}" placeholder="DD/MM/YYYY" readonly style="width:100%;display:block;background:#fff;cursor:pointer">
       <label style="font-size:11px;margin-top:3px;display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:400;color:var(--gray-hint)">
         <input type="checkbox" id="noexp-${idx}" onchange="toggleNoExp(${idx})" style="width:auto;padding:0;border:none">
         ไม่มีวันหมดอายุ
       </label>
     </td>
-    <td><input type="text" id="dim-${idx}" placeholder="กxยxส ซม."></td>
+    <td><input type="number" id="w-${idx}" placeholder="0" min="0" style="width:100%"></td>
+    <td><input type="number" id="l-${idx}" placeholder="0" min="0" style="width:100%"></td>
+    <td><input type="number" id="h-${idx}" placeholder="0" min="0" style="width:100%"></td>
     <td><input type="number" id="qtyc-${idx}" placeholder="0" min="0" oninput="validateQty(this)"></td>
     <td><input type="number" id="qtyp-${idx}" placeholder="0" min="0" oninput="validateQty(this)"></td>
     <td><input type="text" id="rmk-${idx}" placeholder="(ถ้ามี)"></td>
     <td><button class="btn btn-danger btn-sm" onclick="removeLine(${idx})" title="ลบ">✕</button></td>`;
   tbody.appendChild(tr);
+  initFlatpickr(idx);
   updateLineCount();
   document.getElementById(`sku-${idx}`).focus();
 }
@@ -605,7 +613,9 @@ function onSKUInput(idx) {
   const found = skuList.find(s => s.sku === val);
   if (found) {
     document.getElementById(`name-${idx}`).value = found.name;
-    document.getElementById(`dim-${idx}`).value  = found.dimension;
+    document.getElementById(`w-${idx}`).value    = found.width  || '';
+    document.getElementById(`l-${idx}`).value    = found.length || '';
+    document.getElementById(`h-${idx}`).value    = found.height || '';
   }
 }
 
@@ -618,11 +628,39 @@ function validateQty(input) {
   }
 }
 
+function initFlatpickr(idx) {
+  flatpickr(`#expiry-${idx}`, {
+    dateFormat: 'd/m/Y',
+    allowInput: false,
+    disableMobile: true,
+    locale: {
+      firstDayOfWeek: 1,
+      weekdays: {
+        shorthand: ['อา','จ','อ','พ','พฤ','ศ','ส'],
+        longhand:  ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'],
+      },
+      months: {
+        shorthand: ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'],
+        longhand:  ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'],
+      },
+    },
+  });
+}
+
+function cvtDate(val) {
+  // แปลง YYYY-MM-DD (จาก input[type=date]) เป็น DD/MM/YYYY
+  if (!val) return '';
+  const m = val.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+  return val;
+}
+
 function toggleNoExp(idx) {
   const cb  = document.getElementById(`noexp-${idx}`);
   const inp = document.getElementById(`expiry-${idx}`);
+  const fp  = inp._flatpickr;
   if (cb.checked) {
-    inp.value = '';
+    if (fp) fp.clear();
     inp.disabled = true;
     inp.style.opacity = '0.35';
   } else {
@@ -639,8 +677,10 @@ function getLines() {
       sku:        document.getElementById(`sku-${idx}`)?.value.trim()  || '',
       name:       document.getElementById(`name-${idx}`)?.value.trim() || '',
       lot:        document.getElementById(`lot-${idx}`)?.value.trim()  || '',
-      expiryDate: noExp ? 'N/A' : (document.getElementById(`expiry-${idx}`)?.value || ''),
-      dimension:  document.getElementById(`dim-${idx}`)?.value.trim()  || '',
+      expiryDate: noExp ? 'N/A' : (document.getElementById(`expiry-${idx}`)?.value.trim() || ''),
+      width:      document.getElementById(`w-${idx}`)?.value.trim()    || '',
+      length:     document.getElementById(`l-${idx}`)?.value.trim()    || '',
+      height:     document.getElementById(`h-${idx}`)?.value.trim()    || '',
       qtyCarton:  document.getElementById(`qtyc-${idx}`)?.value        || '0',
       qtyPiece:   document.getElementById(`qtyp-${idx}`)?.value        || '0',
       remark:     document.getElementById(`rmk-${idx}`)?.value.trim()  || '',
@@ -671,7 +711,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // =============================================
 //  FILE PARSE
 // =============================================
-const FILE_COLS = ['sku','name','lot','expiryDate','dimension','qtyCarton','qtyPiece','remark'];
+const FILE_COLS = ['sku','name','lot','expiryDate','width','length','height','qtyCarton','qtyPiece','remark'];
 
 function handleFileSelect(file) {
   if (!file) return;
@@ -702,7 +742,7 @@ function parseAndFill(data, type, filename) {
     } else {
       const wb = XLSX.read(data, { type:'array', cellDates:true });
       const ws = wb.Sheets[wb.SheetNames[0]];
-      rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
+      rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:'', raw:false });
     }
     let startRow = 0;
     if (rows.length > 0) {
@@ -722,7 +762,22 @@ function parseAndFill(data, type, filename) {
         const cell = String(row[ci] ?? '').trim();
         const el = document.getElementById(`${fieldToId(field)}-${idx}`);
         if (!el) return;
-        el.value = field === 'expiryDate' ? normalizeDate(cell) : cell;
+        if (field === 'expiryDate') {
+          const fp = el._flatpickr;
+          const dateStr = normalizeDate(cell); // DD/MM/YYYY
+          if (fp && dateStr) {
+            // แปลง DD/MM/YYYY → YYYY-MM-DD ก่อนส่ง setDate
+            const parts = dateStr.split('/');
+            if (parts.length === 3) {
+              const isoStr = `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+              fp.setDate(isoStr, true, 'Y-m-d');
+            }
+          } else {
+            el.value = dateStr;
+          }
+        } else {
+          el.value = cell;
+        }
       });
       const skuVal = document.getElementById(`sku-${idx}`)?.value.trim();
       const found  = skuList.find(s => s.sku === skuVal);
@@ -744,7 +799,7 @@ function parseAndFill(data, type, filename) {
 }
 
 function fieldToId(f) {
-  return { sku:'sku', name:'name', lot:'lot', expiryDate:'expiry', dimension:'dim', qtyCarton:'qtyc', qtyPiece:'qtyp', remark:'rmk' }[f] || f;
+  return { sku:'sku', name:'name', lot:'lot', expiryDate:'expiry', width:'w', length:'l', height:'h', qtyCarton:'qtyc', qtyPiece:'qtyp', remark:'rmk' }[f] || f;
 }
 
 function parseCSV(text) {
@@ -765,21 +820,34 @@ function parseCSV(text) {
 }
 
 function normalizeDate(val) {
+  // Returns DD/MM/YYYY for storage
   if (!val) return '';
-  if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
-  const m = val.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
-  if (m) return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
-  const d = new Date(val);
-  if (!isNaN(d.getTime())) return d.toISOString().slice(0,10);
-  return val;
+  const s = String(val).trim();
+
+  // YYYY-MM-DD (ISO)
+  const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (iso) return `${iso[3]}/${iso[2]}/${iso[1]}`;
+
+  // D/M/YY หรือ D/M/YYYY หรือ DD/MM/YY หรือ DD/MM/YYYY
+  const dmy = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+  if (dmy) {
+    const dd = dmy[1].padStart(2,'0');
+    const mm = dmy[2].padStart(2,'0');
+    let   yy = dmy[3];
+    if (yy.length === 2) yy = '20' + yy; // 26 → 2026
+    return `${dd}/${mm}/${yy}`;
+  }
+
+  // ถ้าไม่ตรง pattern ไหนเลย คืนค่าเดิม
+  return s;
 }
 
 function downloadTemplate() {
-  const header  = ['เลข SKU','ชื่อสินค้า','เลขล็อต','วันหมดอายุ','ขนาดลัง(กxยxส)','จำนวน(ลัง)','จำนวน(ชิ้น)','หมายเหตุ'];
-  const example = ['SKU001','ชื่อสินค้าตัวอย่าง','LOT-001','2026-12-31','30x20x15','10','120',''];
+  const header  = ['เลข SKU *','ชื่อสินค้า *','เลขล็อต *','วันหมดอายุ * (DD/MM/YYYY)','ความกว้างลัง (cm) *','ความยาวลัง (cm) *','ความสูงลัง (cm) *','จำนวน(ลัง) *','จำนวน(ชิ้น) *','หมายเหตุ'];
+  const example = ['SKU001','ชื่อสินค้าตัวอย่าง','LOT-001','31/12/2026','30','20','15','10','120',''];
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.aoa_to_sheet([header, example]);
-  ws['!cols'] = [14,22,14,14,16,12,12,16].map(w => ({ wch:w }));
+  ws['!cols'] = [16,22,14,20,16,16,16,12,14,16].map(w => ({ wch:w }));
   XLSX.utils.book_append_sheet(wb, ws, 'ASN_Lines');
   XLSX.writeFile(wb, 'ASN_Lines_Template.xlsx');
 }
@@ -788,6 +856,7 @@ function downloadTemplate() {
 //  SUBMIT
 // =============================================
 function confirmSubmit() {
+  clearFieldErrors();
   hideAlert('formAlert');
   const err = validateForm();
   if (err) { showAlert('formAlert', err); window.scrollTo(0,0); return; }
@@ -837,39 +906,65 @@ async function doSubmit() {
 // =============================================
 //  VALIDATION
 // =============================================
+function clearFieldErrors() {
+  document.querySelectorAll('.field-error').forEach(el => el.classList.remove('field-error'));
+}
+
+function markError(el, msg) {
+  if (el) el.classList.add('field-error');
+  return msg;
+}
+
+function getLineEl(idx, id) {
+  return document.getElementById(`${id}-${idx}`);
+}
+
 function validateForm() {
-  const docRequired = [
-    ['fPO','หมายเลข PO'],['fArrival','วัน-เวลาที่คาดว่าจะมาถึง'],
-    ['fSenderCompany','ชื่อบริษัทผู้ส่ง'],['fSenderAddress','ที่อยู่บริษัทผู้ส่ง'],
-    ['fSenderName','ชื่อผู้ส่ง'],['fSenderPhone','เบอร์โทรศัพท์ผู้ส่ง'],
-  ];
-  for (const [id, label] of docRequired) {
-    if (!document.getElementById(id).value.trim()) return `กรุณากรอก "${label}"`;
+  clearFieldErrors();
+  let firstErr = null;
+
+  // ─ Doc section: บังคับแค่ PO
+  const poEl = document.getElementById('fPO');
+  if (!poEl.value.trim()) {
+    firstErr = firstErr || markError(poEl, 'กรุณากรอก "หมายเลข PO"');
   }
+
+  const rows = document.querySelectorAll('#linesBody tr');
+  if (rows.length === 0) return 'กรุณาเพิ่มอย่างน้อย 1 รายการสินค้า';
+
   const lines = getLines();
-  if (lines.length === 0) return 'กรุณาเพิ่มอย่างน้อย 1 รายการสินค้า';
-  for (let i = 0; i < lines.length; i++) {
-    const l = lines[i]; const n = i + 1;
-    if (!l.sku)        return `รายการที่ ${n}: กรุณากรอก เลข SKU`;
-    if (!l.name)       return `รายการที่ ${n}: กรุณากรอก ชื่อสินค้า`;
-    if (!l.lot)        return `รายการที่ ${n}: กรุณากรอก เลขล็อต`;
-    if (!l.expiryDate) return `รายการที่ ${n}: กรุณากรอก วันหมดอายุ หรือติ๊ก "ไม่มีวันหมดอายุ"`;
-    if (!l.qtyPiece || l.qtyPiece === '0') return `รายการที่ ${n}: กรุณากรอก จำนวน(ชิ้น)`;
-    if (parseFloat(l.qtyCarton) < 0) return `รายการที่ ${n}: จำนวน(ลัง) ต้องไม่ติดลบ`;
-    if (parseFloat(l.qtyPiece)  < 0) return `รายการที่ ${n}: จำนวน(ชิ้น) ต้องไม่ติดลบ`;
-  }
-  // ตรวจ duplicate SKU + Name + Lot
-  const seen = new Map();
-  for (let i = 0; i < lines.length; i++) {
-    const l = lines[i];
+  const seen  = new Map();
+
+  rows.forEach((tr, i) => {
+    const idx = tr.id.replace('line-','');
+    const l   = lines[i];
+    const n   = i + 1;
+
+    if (!l.sku)  firstErr = firstErr || markError(getLineEl(idx,'sku'),    `รายการที่ ${n}: กรุณากรอก เลข SKU`);
+    if (!l.name) firstErr = firstErr || markError(getLineEl(idx,'name'),   `รายการที่ ${n}: กรุณากรอก ชื่อสินค้า`);
+    if (!l.lot)  firstErr = firstErr || markError(getLineEl(idx,'lot'),    `รายการที่ ${n}: กรุณากรอก เลขล็อต`);
+
+    const noExp = document.getElementById(`noexp-${idx}`)?.checked;
+    if (!noExp && !l.expiryDate) firstErr = firstErr || markError(getLineEl(idx,'expiry'), `รายการที่ ${n}: กรุณากรอก วันหมดอายุ`);
+
+    if (!l.width  || parseFloat(l.width)  <= 0) firstErr = firstErr || markError(getLineEl(idx,'w'),    `รายการที่ ${n}: ความกว้างลังต้องมากกว่า 0`);
+    if (!l.length || parseFloat(l.length) <= 0) firstErr = firstErr || markError(getLineEl(idx,'l'),    `รายการที่ ${n}: ความยาวลังต้องมากกว่า 0`);
+    if (!l.height || parseFloat(l.height) <= 0) firstErr = firstErr || markError(getLineEl(idx,'h'),    `รายการที่ ${n}: ความสูงลังต้องมากกว่า 0`);
+    if (!l.qtyCarton || parseFloat(l.qtyCarton) <= 0) firstErr = firstErr || markError(getLineEl(idx,'qtyc'), `รายการที่ ${n}: จำนวน(ลัง) ต้องมากกว่า 0`);
+    if (!l.qtyPiece  || parseFloat(l.qtyPiece)  <= 0) firstErr = firstErr || markError(getLineEl(idx,'qtyp'), `รายการที่ ${n}: จำนวน(ชิ้น) ต้องมากกว่า 0`);
+
+    // duplicate check
     const key = `${l.sku}||${l.name}||${l.lot}`;
     if (seen.has(key)) {
       const first = seen.get(key) + 1;
-      return `รายการที่ ${i+1} ซ้ำกับรายการที่ ${first} (SKU + ชื่อสินค้า + เลขล็อต เหมือนกัน)`;
+      firstErr = firstErr || markError(getLineEl(idx,'sku'),
+        `รายการที่ ${n} ซ้ำกับรายการที่ ${first} (SKU + ชื่อสินค้า + เลขล็อต เหมือนกัน)`);
+    } else {
+      seen.set(key, i);
     }
-    seen.set(key, i);
-  }
-  return null;
+  });
+
+  return firstErr || null;
 }
 
 // =============================================
