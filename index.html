@@ -783,9 +783,13 @@ function parseAndFill(data, type, filename) {
       const found  = skuList.find(s => s.sku === skuVal);
       if (found) {
         const ne = document.getElementById(`name-${idx}`);
-        const de = document.getElementById(`dim-${idx}`);
-        if (!ne.value) ne.value = found.name;
-        if (!de.value) de.value = found.dimension;
+const we = document.getElementById(`w-${idx}`);
+const le = document.getElementById(`l-${idx}`);
+const he = document.getElementById(`h-${idx}`);
+if (!ne.value) ne.value = found.name;
+if (!we.value) we.value = found.width  || '';
+if (!le.value) le.value = found.length || '';
+if (!he.value) he.value = found.height || '';
       }
     });
 
