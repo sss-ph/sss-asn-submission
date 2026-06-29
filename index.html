@@ -277,7 +277,7 @@
           <input type="text" id="fBrand" disabled>
         </div>
         <div class="field">
-          <label>หมายเลข PO <span style="color:var(--danger)">*</span></label>
+          <label>หมายเลข PO</label>
           <input type="text" id="fPO">
         </div>
         <div class="field">
@@ -327,7 +327,7 @@
           <span id="uploadResult" class="upload-result"></span>
         </div>
         <div style="margin-top:8px;font-size:11px;color:var(--gray-hint);line-height:1.6">
-          <strong>ลำดับ Column:</strong> เลข SKU * · ชื่อสินค้า * · เลขล็อต * · วันหมดอายุ * (DD/MM/YYYY) · กว้าง * · ยาว * · สูง * · จำนวน(ลัง) * · จำนวน(ชิ้น) * · หมายเหตุ
+          <strong>ลำดับ Column:</strong> เลข SKU · ชื่อสินค้า · เลขล็อต · วันหมดอายุ (DD/MM/YYYY) · กว้าง · ยาว · สูง · จำนวน(ลัง) · จำนวน(ชิ้น) · หมายเหตุ
         </div>
       </div>
 
@@ -336,15 +336,15 @@
           <thead>
             <tr>
               <th style="width:32px">#</th>
-              <th style="min-width:130px">เลข SKU <span style="font-weight:400;opacity:.75">*</span></th>
-              <th style="min-width:150px">ชื่อสินค้า <span style="font-weight:400;opacity:.75">*</span></th>
-              <th style="min-width:100px">เลขล็อต <span style="font-weight:400;opacity:.75">*</span></th>
-              <th style="min-width:118px">วันหมดอายุ <span style="font-weight:400;opacity:.75">*</span><br><span style="font-weight:400;font-size:11px;opacity:.6">DD/MM/YYYY</span></th>
-              <th style="min-width:90px">ความกว้างลัง <span style="font-weight:400;opacity:.75">*</span><br><span style="font-weight:400;opacity:.8">(cm)</span></th>
-              <th style="min-width:90px">ความยาวลัง <span style="font-weight:400;opacity:.75">*</span><br><span style="font-weight:400;opacity:.8">(cm)</span></th>
-              <th style="min-width:90px">ความสูงลัง <span style="font-weight:400;opacity:.75">*</span><br><span style="font-weight:400;opacity:.8">(cm)</span></th>
-              <th style="min-width:80px">จำนวน <span style="font-weight:400;opacity:.75">*</span><br><span style="font-weight:400;opacity:.8">(ลัง)</span></th>
-              <th style="min-width:80px">จำนวน <span style="font-weight:400;opacity:.75">*</span><br><span style="font-weight:400;opacity:.8">(ชิ้น)</span></th>
+              <th style="min-width:130px">เลข SKU</th>
+              <th style="min-width:150px">ชื่อสินค้า</th>
+              <th style="min-width:100px">เลขล็อต</th>
+              <th style="min-width:118px">วันหมดอายุ<br><span style="font-weight:400;font-size:11px;opacity:.6">DD/MM/YYYY</span></th>
+              <th style="min-width:90px">ความกว้างลัง<br><span style="font-weight:400;opacity:.8">(cm)</span></th>
+              <th style="min-width:90px">ความยาวลัง<br><span style="font-weight:400;opacity:.8">(cm)</span></th>
+              <th style="min-width:90px">ความสูงลัง<br><span style="font-weight:400;opacity:.8">(cm)</span></th>
+              <th style="min-width:80px">จำนวน<br><span style="font-weight:400;opacity:.8">(ลัง)</span></th>
+              <th style="min-width:80px">จำนวน<br><span style="font-weight:400;opacity:.8">(ชิ้น)</span></th>
               <th style="min-width:96px">หมายเหตุ</th>
               <th style="width:36px"></th>
             </tr>
@@ -422,8 +422,10 @@ const COMPANY_LOGO = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABggAAAYICAYA
 // =============================================
 //  STATE
 // =============================================
-let currentBrand  = '';
-let currentBrands = [];
+let currentBrand        = '';
+let currentBrands       = [];
+let requirementsByBrand = {};
+let currentRequirements = {};
 let currentUsername = '';   // brands[] จาก login
 let fixedEmails   = [];   // fixed emails จาก Customer sheet (หลังบ้าน)
 let skuList = [];
@@ -461,6 +463,80 @@ function getEmails() {
 }
 
 
+// =============================================
+//  REQUIREMENTS UI
+// =============================================
+const DOC_FIELDS = [
+  { id:'fPO',            key:'doc_po',             label:'หมายเลข PO' },
+  { id:'fArrival',       key:'doc_arrival',         label:'วัน-เวลาที่คาดว่าจะมาถึง' },
+  { id:'fSenderCompany', key:'doc_sender_company',  label:'ชื่อบริษัทผู้ส่ง' },
+  { id:'fSenderAddress', key:'doc_sender_address',  label:'ที่อยู่บริษัทผู้ส่ง' },
+  { id:'fSenderName',    key:'doc_sender_name',     label:'ชื่อผู้ส่ง' },
+  { id:'fSenderPhone',   key:'doc_sender_phone',    label:'เบอร์โทรศัพท์ผู้ส่ง' },
+  { id:'fRemark',        key:'doc_remark',          label:'หมายเหตุ' },
+];
+
+const LINE_FIELDS = [
+  { id:'sku',   key:'line_sku',        label:'เลข SKU' },
+  { id:'name',  key:'line_name',       label:'ชื่อสินค้า' },
+  { id:'lot',   key:'line_lot',        label:'เลขล็อต' },
+  { id:'expiry',key:'line_expiry',     label:'วันหมดอายุ' },
+  { id:'w',     key:'line_width',      label:'ความกว้างลัง' },
+  { id:'l',     key:'line_length',     label:'ความยาวลัง' },
+  { id:'h',     key:'line_height',     label:'ความสูงลัง' },
+  { id:'qtyc',  key:'line_qty_carton', label:'จำนวน(ลัง)' },
+  { id:'qtyp',  key:'line_qty_piece',  label:'จำนวน(ชิ้น)' },
+  { id:'rmk',   key:'line_remark',     label:'หมายเหตุ' },
+];
+
+function isReq(key) { return currentRequirements[key] === true; }
+
+function applyRequirementsUI() {
+  // แก้ label ส่วน ASN Document
+  DOC_FIELDS.forEach(f => {
+    const el = document.getElementById(f.id);
+    if (!el) return;
+    const label = el.closest('.field')?.querySelector('label');
+    if (!label) return;
+    // ลบ * เดิมก่อน
+    label.querySelectorAll('.req-star').forEach(s => s.remove());
+    if (isReq(f.key)) {
+      const star = document.createElement('span');
+      star.className = 'req-star';
+      star.style.cssText = 'color:var(--danger);margin-left:3px';
+      star.textContent = '*';
+      label.appendChild(star);
+    }
+  });
+
+  // อัพเดท table header สำหรับ line fields
+  // (header render ใหม่ตอน addLine ไม่ได้ แต่อัพเดท th text ได้)
+  const thMap = {
+    line_sku:        0, line_name: 1, line_lot: 2, line_expiry: 3,
+    line_width:      4, line_length: 5, line_height: 6,
+    line_qty_carton: 7, line_qty_piece: 8, line_remark: 9,
+  };
+  // ดึง th ทั้งหมดของ linesTable (ข้าม # column แรก)
+  const ths = document.querySelectorAll('#linesTable thead th');
+  // th[0]=# th[1]=SKU th[2]=ชื่อ th[3]=ล็อต th[4]=วันหมด th[5]=กว้าง th[6]=ยาว th[7]=สูง th[8]=ลัง th[9]=ชิ้น th[10]=หมาย th[11]=ปุ่มลบ
+  const LINE_TH_KEYS = [
+    null, 'line_sku','line_name','line_lot','line_expiry',
+    'line_width','line_length','line_height','line_qty_carton','line_qty_piece','line_remark', null
+  ];
+  ths.forEach((th, i) => {
+    const key = LINE_TH_KEYS[i];
+    if (!key) return;
+    th.querySelectorAll('.req-star').forEach(s => s.remove());
+    if (isReq(key)) {
+      const star = document.createElement('span');
+      star.className = 'req-star';
+      star.style.cssText = 'font-weight:400;opacity:.75;margin-left:2px';
+      star.textContent = '*';
+      th.appendChild(star);
+    }
+  });
+}
+
 async function doLogin() {
   const username = document.getElementById('inputUsername').value.trim();
   const password = document.getElementById('inputPassword').value.trim();
@@ -472,8 +548,9 @@ async function doLogin() {
   try {
     const res = await gasPost({ action:'login', username, password });
     if (res.success) {
-      currentBrands   = res.brands || [];
-      currentUsername = username;
+      currentBrands        = res.brands || [];
+      currentUsername      = username;
+      requirementsByBrand  = res.requirementsByBrand || {};
       fixedEmails   = res.fixedEmails || [];
       // แสดงหน้าเลือก Brand
       const sel = document.getElementById('brandSelect');
@@ -517,8 +594,10 @@ async function confirmBrand() {
   hideAlert('brandAlert');
   if (!brand) { showAlert('brandAlert', 'กรุณาเลือก Brand'); return; }
   currentBrand = brand;
+  currentRequirements = requirementsByBrand[brand] || {};
   await loadSKUs();
   showPage('asnPage');
+  applyRequirementsUI();
   document.getElementById('topBrand').textContent = currentBrand;
   document.getElementById('fBrand').value = currentBrand;
   document.getElementById('btnSwitchBrand').style.display = currentBrands.length > 1 ? '' : 'none';
@@ -847,7 +926,7 @@ function normalizeDate(val) {
 }
 
 function downloadTemplate() {
-  const header  = ['เลข SKU *','ชื่อสินค้า *','เลขล็อต *','วันหมดอายุ * (DD/MM/YYYY)','ความกว้างลัง (cm) *','ความยาวลัง (cm) *','ความสูงลัง (cm) *','จำนวน(ลัง) *','จำนวน(ชิ้น) *','หมายเหตุ'];
+  const header  = ['เลข SKU','ชื่อสินค้า','เลขล็อต','วันหมดอายุ (DD/MM/YYYY)','ความกว้างลัง (cm)','ความยาวลัง (cm)','ความสูงลัง (cm)','จำนวน(ลัง)','จำนวน(ชิ้น)','หมายเหตุ'];
   const example = ['SKU001','ชื่อสินค้าตัวอย่าง','LOT-001','31/12/2026','30','20','15','10','120',''];
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.aoa_to_sheet([header, example]);
@@ -927,11 +1006,12 @@ function validateForm() {
   clearFieldErrors();
   let firstErr = null;
 
-  // ─ Doc section: บังคับแค่ PO
-  const poEl = document.getElementById('fPO');
-  if (!poEl.value.trim()) {
-    firstErr = firstErr || markError(poEl, 'กรุณากรอก "หมายเลข PO"');
-  }
+  // ─ Doc section: ตาม currentRequirements
+  DOC_FIELDS.forEach(f => {
+    const el = document.getElementById(f.id);
+    if (!el || !isReq(f.key)) return;
+    if (!el.value.trim()) firstErr = firstErr || markError(el, `กรุณากรอก "${f.label}"`);
+  });
 
   const rows = document.querySelectorAll('#linesBody tr');
   if (rows.length === 0) return 'กรุณาเพิ่มอย่างน้อย 1 รายการสินค้า';
@@ -944,18 +1024,22 @@ function validateForm() {
     const l   = lines[i];
     const n   = i + 1;
 
-    if (!l.sku)  firstErr = firstErr || markError(getLineEl(idx,'sku'),    `รายการที่ ${n}: กรุณากรอก เลข SKU`);
-    if (!l.name) firstErr = firstErr || markError(getLineEl(idx,'name'),   `รายการที่ ${n}: กรุณากรอก ชื่อสินค้า`);
-    if (!l.lot)  firstErr = firstErr || markError(getLineEl(idx,'lot'),    `รายการที่ ${n}: กรุณากรอก เลขล็อต`);
-
+    // validate lines ตาม currentRequirements
+    const lineVals = {
+      line_sku: l.sku, line_name: l.name, line_lot: l.lot,
+      line_remark: l.remark,
+    };
     const noExp = document.getElementById(`noexp-${idx}`)?.checked;
-    if (!noExp && !l.expiryDate) firstErr = firstErr || markError(getLineEl(idx,'expiry'), `รายการที่ ${n}: กรุณากรอก วันหมดอายุ`);
 
-    if (!l.width  || parseFloat(l.width)  <= 0) firstErr = firstErr || markError(getLineEl(idx,'w'),    `รายการที่ ${n}: ความกว้างลังต้องมากกว่า 0`);
-    if (!l.length || parseFloat(l.length) <= 0) firstErr = firstErr || markError(getLineEl(idx,'l'),    `รายการที่ ${n}: ความยาวลังต้องมากกว่า 0`);
-    if (!l.height || parseFloat(l.height) <= 0) firstErr = firstErr || markError(getLineEl(idx,'h'),    `รายการที่ ${n}: ความสูงลังต้องมากกว่า 0`);
-    if (!l.qtyCarton || parseFloat(l.qtyCarton) <= 0) firstErr = firstErr || markError(getLineEl(idx,'qtyc'), `รายการที่ ${n}: จำนวน(ลัง) ต้องมากกว่า 0`);
-    if (!l.qtyPiece  || parseFloat(l.qtyPiece)  <= 0) firstErr = firstErr || markError(getLineEl(idx,'qtyp'), `รายการที่ ${n}: จำนวน(ชิ้น) ต้องมากกว่า 0`);
+    if (isReq('line_sku')  && !l.sku)  firstErr = firstErr || markError(getLineEl(idx,'sku'),  `รายการที่ ${n}: กรุณากรอก เลข SKU`);
+    if (isReq('line_name') && !l.name) firstErr = firstErr || markError(getLineEl(idx,'name'), `รายการที่ ${n}: กรุณากรอก ชื่อสินค้า`);
+    if (isReq('line_lot')  && !l.lot)  firstErr = firstErr || markError(getLineEl(idx,'lot'),  `รายการที่ ${n}: กรุณากรอก เลขล็อต`);
+    if (isReq('line_expiry') && !noExp && !l.expiryDate) firstErr = firstErr || markError(getLineEl(idx,'expiry'), `รายการที่ ${n}: กรุณากรอก วันหมดอายุ`);
+    if (isReq('line_width')      && (!l.width      || parseFloat(l.width)      <= 0)) firstErr = firstErr || markError(getLineEl(idx,'w'),    `รายการที่ ${n}: ความกว้างลังต้องมากกว่า 0`);
+    if (isReq('line_length')     && (!l.length     || parseFloat(l.length)     <= 0)) firstErr = firstErr || markError(getLineEl(idx,'l'),    `รายการที่ ${n}: ความยาวลังต้องมากกว่า 0`);
+    if (isReq('line_height')     && (!l.height     || parseFloat(l.height)     <= 0)) firstErr = firstErr || markError(getLineEl(idx,'h'),    `รายการที่ ${n}: ความสูงลังต้องมากกว่า 0`);
+    if (isReq('line_qty_carton') && (!l.qtyCarton  || parseFloat(l.qtyCarton)  <= 0)) firstErr = firstErr || markError(getLineEl(idx,'qtyc'), `รายการที่ ${n}: จำนวน(ลัง) ต้องมากกว่า 0`);
+    if (isReq('line_qty_piece')  && (!l.qtyPiece   || parseFloat(l.qtyPiece)   <= 0)) firstErr = firstErr || markError(getLineEl(idx,'qtyp'), `รายการที่ ${n}: จำนวน(ชิ้น) ต้องมากกว่า 0`);
 
     // duplicate check
     const key = `${l.sku}||${l.name}||${l.lot}`;
@@ -1001,6 +1085,7 @@ function resetForm() {
 }
 function doLogout() {
   currentBrand = ''; currentBrands = []; currentUsername = ''; fixedEmails = []; skuList = [];
+  requirementsByBrand = {}; currentRequirements = {};
   ['inputUsername','inputPassword'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('brandSelect').innerHTML = '';
   hideAlert('loginAlert'); showPage('loginPage');
